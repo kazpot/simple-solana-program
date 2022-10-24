@@ -9,6 +9,8 @@ import { TokenContract } from "../target/types/token_contract";
 
 require("dotenv").config();
 
+const TO_ADDRESS = "9WxE6JWyMa17pSJfzLyds1SmgMu9h2FZDawP7uLdfwAo";
+
 (async () => {
   const fromHexString = (hexString: string) =>
     Uint8Array.from(
@@ -35,7 +37,7 @@ require("dotenv").config();
     fromKey.publicKey
   );
 
-  const toKey = new PublicKey("9WxE6JWyMa17pSJfzLyds1SmgMu9h2FZDawP7uLdfwAo");
+  const toKey = new PublicKey(TO_ADDRESS);
   console.log("toAddress: " + toKey.toString());
 
   const toATA = await getOrCreateAssociatedTokenAccount(
