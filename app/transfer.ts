@@ -2,11 +2,10 @@ import * as anchor from "@project-serum/anchor";
 import {
   TOKEN_PROGRAM_ID,
   getAssociatedTokenAddress,
-  createAssociatedTokenAccountInstruction,
+  getOrCreateAssociatedTokenAccount,
 } from "@solana/spl-token";
-import { Keypair, Transaction } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import { TokenContract } from "../target/types/token_contract";
-import { web3 } from "@project-serum/anchor";
 
 require("dotenv").config();
 
@@ -23,43 +22,36 @@ require("dotenv").config();
 
   const mintKeyHex = process.env.MINT_KEY ?? "";
   const mintKeyBytes = fromHexString(mintKeyHex);
-  let mintKey = web3.Keypair.fromSecretKey(Uint8Array.from(mintKeyBytes));
+  const mintKey = Keypair.fromSecretKey(Uint8Array.from(mintKeyBytes));
   console.log("tokenAddress: " + mintKey.publicKey);
 
-  const fromKey = anchor.AnchorProvider.env().wallet;
+  const fromKeyHex = process.env.MY_KEY ?? "";
+  const fromKeyBytes = fromHexString(fromKeyHex);
+  const fromKey = Keypair.fromSecretKey(Uint8Array.from(fromKeyBytes));
   console.log("fromAddress: " + fromKey.publicKey.toString());
+
   const fromATA = await getAssociatedTokenAddress(
     mintKey.publicKey,
     fromKey.publicKey
   );
 
-  const toKey: Keypair = Keypair.generate();
-  console.log("toAddress: " + toKey.publicKey.toString());
+  const toKey = new PublicKey("9WxE6JWyMa17pSJfzLyds1SmgMu9h2FZDawP7uLdfwAo");
+  console.log("toAddress: " + toKey.toString());
 
-  const toATA = await getAssociatedTokenAddress(
+  const toATA = await getOrCreateAssociatedTokenAccount(
+    anchor.getProvider().connection,
+    fromKey,
     mintKey.publicKey,
-    toKey.publicKey
+    toKey
   );
 
-  const tx = new Transaction().add(
-    createAssociatedTokenAccountInstruction(
-      fromKey.publicKey,
-      toATA,
-      toKey.publicKey,
-      mintKey.publicKey
-    )
-  );
-
-  let txSig = await anchor.AnchorProvider.env().sendAndConfirm(tx, []);
-  console.log("create toAccount - txSig: ", txSig);
-
-  txSig = await program.methods
+  let txSig = await program.methods
     .transferToken()
     .accounts({
       tokenProgram: TOKEN_PROGRAM_ID,
       from: fromATA,
       signer: fromKey.publicKey,
-      to: toATA,
+      to: toATA.address,
     })
     .rpc();
 
