@@ -7,7 +7,12 @@ import {
   getAssociatedTokenAddress,
   createInitializeMintInstruction,
 } from "@solana/spl-token";
-import { Keypair, Transaction, SystemProgram } from "@solana/web3.js";
+import {
+  Keypair,
+  Transaction,
+  SystemProgram,
+  ParsedAccountData,
+} from "@solana/web3.js";
 import { assert } from "chai";
 
 describe("token-contract", () => {
@@ -67,11 +72,13 @@ describe("token-contract", () => {
       })
       .rpc();
     console.log("call mintToken - txSig: ", txSig);
-    const balance = (
+    const balanceData = (
       await program.provider.connection.getParsedAccountInfo(
         associatedTokenAccount
       )
-    ).value.data.parsed.info.tokenAmount.amount;
+    ).value.data;
+    const balance = (balanceData as ParsedAccountData).parsed.info.tokenAmount
+      .amount;
     assert.equal(balance, 1000);
   });
 
@@ -107,15 +114,19 @@ describe("token-contract", () => {
 
     console.log("transferToken - txSig: ", txSig);
 
-    const fromBalance = (
+    const fromBalanceData = (
       await program.provider.connection.getParsedAccountInfo(
         associatedTokenAccount
       )
-    ).value.data.parsed.info.tokenAmount.amount;
+    ).value.data;
+    const fromBalance = (fromBalanceData as ParsedAccountData).parsed.info
+      .tokenAmount.amount;
 
-    const toBalance = (
+    const toBalanceData = (
       await program.provider.connection.getParsedAccountInfo(toATA)
-    ).value.data.parsed.info.tokenAmount.amount;
+    ).value.data;
+    const toBalance = (toBalanceData as ParsedAccountData).parsed.info
+      .tokenAmount.amount;
 
     assert.equal(fromBalance, 995);
     assert.equal(toBalance, 5);
